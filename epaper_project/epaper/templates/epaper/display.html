@@ -58,7 +58,7 @@
       padding: 20px 0;
     }
     .bottom-navbar button {
-      font-size: 3em;
+      font-size: 2em;
       padding: 10px 20px;
     }
   </style>
@@ -68,17 +68,15 @@
   <div class="btn">
     <!-- Remove < > buttons -->
   </div>
-  <input type="number" id="indexInput" class="index-input" min="1" max="19" placeholder="Go to Page No">
+  <input type="number" id="indexInput" class="index-input" min="1" placeholder="Go to Page No">
   <div id="indexDisplay" class="index-display"></div>
   
   <!-- Fixed bottom navbar -->
-  <div class="bottom-navbar">
-    <button onclick="previousLevel()">Prev</button>
-    <button onclick="nextLevel()">Next</button>
-  </div>
+  <div class="bottom-navbar" id="bottomNavbar"></div>
 
   <script>
     let currentLevelIndex = 1; // Initial level index
+    let totalPages = 0; // Variable to store total pages dynamically
 
     document.addEventListener("DOMContentLoaded", function() {
       fetchLevelData(currentLevelIndex);
@@ -93,8 +91,10 @@
           return response.json();
         })
         .then(data => {
+          totalPages = Object.keys(data).length; // Update total pages dynamically
           displayLevel(data, levelIndex);
-          updateIndexDisplay(levelIndex, data);
+          updateIndexDisplay(levelIndex);
+          updateBottomNavbar();
         })
         .catch(error => console.error('Error fetching data:', error));
     }
@@ -119,37 +119,47 @@
       });
     }
 
-    function updateIndexDisplay(currentIndex, data) {
-      const totalIndexes = Object.keys(data).length;
+    function updateIndexDisplay(currentIndex) {
       const indexDisplay = document.getElementById('indexDisplay');
-      indexDisplay.textContent = `${currentIndex}/${totalIndexes}`;
+      indexDisplay.textContent = `${currentIndex}/${totalPages}`;
     }
 
-    function previousLevel() {
-      currentLevelIndex--;
-      if (currentLevelIndex < 1) {
-        currentLevelIndex = 19; // Cycle back to the last level (18) when reaching the first level (1)
-      }
-      fetchLevelData(currentLevelIndex);
-    }
+    function updateBottomNavbar() {
+      const bottomNavbar = document.getElementById('bottomNavbar');
+      bottomNavbar.innerHTML = ''; // Clear previous buttons
 
-    function nextLevel() {
-      currentLevelIndex++;
-      if (currentLevelIndex > 19) {
-        currentLevelIndex = 1; // Cycle back to the first level (1) when reaching the last level (18)
-      }
-      fetchLevelData(currentLevelIndex);
+      const prevButton = document.createElement('button');
+      prevButton.textContent = 'Prev';
+      prevButton.addEventListener('click', () => {
+        currentLevelIndex--;
+        if (currentLevelIndex < 1) {
+          currentLevelIndex = totalPages; // Cycle back to the last page when reaching the first page
+        }
+        fetchLevelData(currentLevelIndex);
+      });
+      bottomNavbar.appendChild(prevButton);
+
+      const nextButton = document.createElement('button');
+      nextButton.textContent = 'Next';
+      nextButton.addEventListener('click', () => {
+        currentLevelIndex++;
+        if (currentLevelIndex > totalPages) {
+          currentLevelIndex = 1; // Cycle back to the first page when reaching the last page
+        }
+        fetchLevelData(currentLevelIndex);
+      });
+      bottomNavbar.appendChild(nextButton);
     }
 
     // Event listener for the index input field
     const indexInput = document.getElementById('indexInput');
     indexInput.addEventListener('change', function() {
       const newIndex = parseInt(indexInput.value);
-      if (newIndex >= 1 && newIndex <= 19) {
+      if (newIndex >= 1 && newIndex <= totalPages) {
         currentLevelIndex = newIndex;
         fetchLevelData(currentLevelIndex);
       } else {
-        alert('Please enter a valid index between 1 and 18.');
+        alert(`Please enter a valid index between 1 and ${totalPages}.`);
         indexInput.value = currentLevelIndex; // Reset to current index if invalid input
       }
     });
