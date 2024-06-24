@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Display Images</title>
+  <style>
+    .image-container {
+      position: relative;
+      /* Set the initial size for the container */
+      width: 1600px; /* Adjust as per level2 width */
+      height: 2743px; /* Adjust as per level2 height */
+      overflow: hidden; /* Prevents images from overflowing */
+      touch-action: pan-y; /* Allows vertical scroll */
+    }
+    .image-chunk {
+      position: absolute;
+    }
+    .index-input {
+      position: fixed; /* Changed from absolute to fixed */
+      top: 10px;
+      right: 30px;
+      font-size: 3em; /* Adjusted the font size */
+      padding: 10px;
+      width: 500px;
+      height: 80px; /* Adjusted the width */
+      border: 1px solid black; /* Added border */
+      outline: none;
+    }
+    .index-display {
+      position: fixed; /* Changed from absolute to fixed */
+      top: 10px;
+      left: 10px;
+      font-size: 5em; /* Adjusted the font size */
+    }
+  </style>
+</head>
+<body>
+  <div class="image-container" id="imageContainer" 
+       ontouchstart="handleTouchStart(event)" 
+       ontouchmove="handleTouchMove(event)" 
+       ontouchend="handleTouchEnd(event)">
+  </div>
+  <input type="number" id="indexInput" class="index-input" min="1" max="19" placeholder="Go to Page No">
+  <div id="indexDisplay" class="index-display"></div>
+
+  <script>
+    let currentLevelIndex = 1; // Initial level index
+    let xStart = null; // Initial touch start position
+
+    document.addEventListener("DOMContentLoaded", function() {
+      fetchLevelData(currentLevelIndex);
+    });
+
+    function fetchLevelData(levelIndex) {
+      fetch('/fetch_scraped_data') // Fetch data from the Django view
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          displayLevel(data, levelIndex);
+          updateIndexDisplay(levelIndex, data);
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+
+    function displayLevel(data, levelIndex) {
+      const levelKey = `${levelIndex}`;
+      const level = data[levelKey].levels["level2"];
+      const container = document.getElementById('imageContainer');
+      container.style.width = `${level.width}px`;
+      container.style.height = `${level.height}px`;
+      container.innerHTML = ''; // Clear previous images
+
+      level.chunks.forEach(chunk => {
+        const img = document.createElement('img');
+        img.src = chunk.url;
+        img.style.left = `${chunk.tx}px`;
+        img.style.top = `${chunk.ty}px`;
+        img.style.width = `${chunk.width}px`;
+        img.style.height = `${chunk.height}px`;
+        img.classList.add('image-chunk');
+        container.appendChild(img);
+      });
+    }
+
+    function updateIndexDisplay(currentIndex, data) {
+      const totalIndexes = Object.keys(data).length;
+      const indexDisplay = document.getElementById('indexDisplay');
+      indexDisplay.textContent = `${currentIndex}/${totalIndexes}`;
+    }
+
+    function handleTouchStart(event) {
+      xStart = event.touches[0].clientX;
+    }
+
+    function handleTouchMove(event) {
+      if (!xStart) return;
+
+      let xEnd = event.touches[0].clientX;
+      let xDiff = xStart - xEnd;
+
+      if (xDiff > 0) {
+        // Swiped left, go to next level
+        nextLevel();
+      } else {
+        // Swiped right, go to previous level
+        previousLevel();
+      }
+
+      xStart = null; // Reset start position
+    }
+
+    function previousLevel() {
+      currentLevelIndex--;
+      if (currentLevelIndex < 1) {
+        currentLevelIndex = 19; // Cycle back to the last level (18) when reaching the first level (1)
+      }
+      fetchLevelData(currentLevelIndex);
+    }
+
+    function nextLevel() {
+      currentLevelIndex++;
+      if (currentLevelIndex > 19) {
+        currentLevelIndex = 1; // Cycle back to the first level (1) when reaching the last level (18)
+      }
+      fetchLevelData(currentLevelIndex);
+    }
+
+    // Event listener for the index input field
+    const indexInput = document.getElementById('indexInput');
+    indexInput.addEventListener('change', function() {
+      const newIndex = parseInt(indexInput.value);
+      if (newIndex >= 1 && newIndex <= 19) {
+        currentLevelIndex = newIndex;
+        fetchLevelData(currentLevelIndex);
+      } else {
+        alert('Please enter a valid index between 1 and 18.');
+        indexInput.value = currentLevelIndex; // Reset to current index if invalid input
+      }
+    });
+  </script>
+</body>
+</html>
