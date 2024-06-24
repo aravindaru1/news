@@ -1,3 +1,4 @@
+<!-- templates/epaper/display.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,11 +11,29 @@
       /* Set the initial size for the container */
       width: 1600px; /* Adjust as per level2 width */
       height: 2743px; /* Adjust as per level2 height */
-      overflow: hidden; /* Prevents images from overflowing */
-      touch-action: pan-y; /* Allows vertical scroll */
     }
     .image-chunk {
       position: absolute;
+    }
+    .btn {
+      position: absolute;
+      top: 100%;
+      padding: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+    }
+    button {
+      width: 200px;
+      height: 200px;
+      background-color: transparent;
+      color: black;
+      font-size: 9em;
+      border: transparent;
+      outline: transparent;
+    }
+    .previous {
+      margin-right: 1360px;
     }
     .index-input {
       position: fixed; /* Changed from absolute to fixed */
@@ -36,17 +55,17 @@
   </style>
 </head>
 <body>
-  <div class="image-container" id="imageContainer" 
-       ontouchstart="handleTouchStart(event)" 
-       ontouchmove="handleTouchMove(event)" 
-       ontouchend="handleTouchEnd(event)">
+  <div class="image-container" id="imageContainer"></div>
+  <div class="btn">
+    <button onclick="previousLevel()" class="previous"> < </button>
+    <button onclick="nextLevel()"> > </button>
   </div>
   <input type="number" id="indexInput" class="index-input" min="1" max="19" placeholder="Go to Page No">
   <div id="indexDisplay" class="index-display"></div>
+  
 
   <script>
     let currentLevelIndex = 1; // Initial level index
-    let xStart = null; // Initial touch start position
 
     document.addEventListener("DOMContentLoaded", function() {
       fetchLevelData(currentLevelIndex);
@@ -93,27 +112,6 @@
       indexDisplay.textContent = `${currentIndex}/${totalIndexes}`;
     }
 
-    function handleTouchStart(event) {
-      xStart = event.touches[0].clientX;
-    }
-
-    function handleTouchMove(event) {
-      if (!xStart) return;
-
-      let xEnd = event.touches[0].clientX;
-      let xDiff = xStart - xEnd;
-
-      if (xDiff > 0) {
-        // Swiped left, go to next level
-        nextLevel();
-      } else {
-        // Swiped right, go to previous level
-        previousLevel();
-      }
-
-      xStart = null; // Reset start position
-    }
-
     function previousLevel() {
       currentLevelIndex--;
       if (currentLevelIndex < 1) {
@@ -145,3 +143,4 @@
   </script>
 </body>
 </html>
+remove < > and if user swipe from right to left it should go for next page .and if user swipe left to right it go to previous page
