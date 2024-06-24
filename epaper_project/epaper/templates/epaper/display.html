@@ -1,4 +1,3 @@
-<!-- templates/epaper/display.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +16,7 @@
     }
     .btn {
       position: absolute;
-      top:   70%;
+      top: 100%;
       padding: 20px;
       width: 100%;
       display: flex;
@@ -31,9 +30,6 @@
       font-size: 9em;
       border: transparent;
       outline: transparent;
-    }
-    .previous {
-      margin-right: 1360px;
     }
     .index-input {
       position: fixed; /* Changed from absolute to fixed */
@@ -52,17 +48,34 @@
       left: 10px;
       font-size: 5em; /* Adjusted the font size */
     }
+    .bottom-navbar {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: space-around;
+      padding: 20px 0;
+    }
+    .bottom-navbar button {
+      font-size: 3em;
+      padding: 10px 20px;
+    }
   </style>
 </head>
 <body>
   <div class="image-container" id="imageContainer"></div>
   <div class="btn">
-    <button onclick="previousLevel()" class="previous"> < </button>
-    <button onclick="nextLevel()"> > </button>
+    <!-- Remove < > buttons -->
   </div>
   <input type="number" id="indexInput" class="index-input" min="1" max="19" placeholder="Go to Page No">
   <div id="indexDisplay" class="index-display"></div>
   
+  <!-- Fixed bottom navbar -->
+  <div class="bottom-navbar">
+    <button onclick="previousLevel()">Prev</button>
+    <button onclick="nextLevel()">Next</button>
+  </div>
 
   <script>
     let currentLevelIndex = 1; // Initial level index
@@ -143,4 +156,3 @@
   </script>
 </body>
 </html>
-
