@@ -3,18 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>News Papers</title>
+  <title>Merged Display</title>
   <style>
-    .image-container {
-      position: relative;
-      /* Set the initial size for the container */
-      width: 1600px; /* Adjust as per level2 width */
-      height: 2743px; /* Adjust as per level2 height */
+    /* Common styles */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
     }
-    .image-chunk {
+    .container {
+      padding-top: 60px; /* Ensure content below the fixed buttons */
+    }
+    .fixed-buttons {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #f0f0f0;
+      z-index: 1000;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .fixed-buttons button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+
+    /* Styles from eenadu */
+   
+    #eenadu-content .page-container {
+      position: relative;
+      width: 100%;
+      margin: 0 auto;
+    }
+    #eenadu-content .background-img, #eenadu-content .overlay-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+    #eenadu-content .navigation {
+        position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+    }
+    #eenadu-content .navigation button {
+        font-size: 1.4em;
+        padding: 10px;
+        outline: none;
+        border: none;
+    }
+    #eenadu-content .page-number {
+      margin: 0 10px;
+    }
+
+    /* Styles from v6 */
+    #v6-content {
+      display: none; /* Initially hide v6 content */
+    }
+    #v6-content .image-container {
+      position: relative;
+      width: 1600px;
+      height: 2743px;
+      margin: 0 auto;
+    }
+    #v6-content .image-chunk {
       position: absolute;
     }
-    .btn {
+    #v6-content .btn {
       position: absolute;
       top: 100%;
       padding: 20px;
@@ -22,147 +82,265 @@
       display: flex;
       justify-content: space-around;
     }
-    button {
+    #v6-content button {
       width: 200px;
       height: 200px;
       background-color: transparent;
       color: black;
-      font-size: 9em;
+      font-size: 1.5em;
       border: transparent;
       outline: transparent;
     }
-    .index-input {
-      position: fixed; /* Changed from absolute to fixed */
+    #v6-content .index-input {
+      position: fixed;
       top: 10px;
       right: 30px;
-      font-size: 3em; /* Adjusted the font size */
+      font-size: 1em;
       padding: 10px;
-      width: 500px;
-      height: 80px; /* Adjusted the width */
-      border: 1px solid black; /* Added border */
+      width: 200px;
+      height: 40px;
+      border: 1px solid black;
       outline: none;
     }
-    .index-display {
-      position: fixed; /* Changed from absolute to fixed */
-      top: 10px;
-      left: 10px;
-      font-size: 5em; /* Adjusted the font size */
-    }
-    .bottom-navbar {
+    #v6-content .index-display {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       position: fixed;
+      bottom:  10px;
+      left: 10px;
+      font-size: 2em;
+      z-index: 100;
+    }
+    #v6-content .bottom-navbar {
+        position: fixed;
       bottom: 0;
       width: 100%;
       background-color: #f0f0f0;
       display: flex;
       justify-content: space-around;
-      padding: 20px 0;
+      padding: 10px 0;
     }
-    .bottom-navbar button {
-      font-size: 2em;
-      padding: 10px 20px;
+    #v6-content .bottom-navbar button {
+        font-size: 1.4em;
+        padding: 10px;
+        outline: none;
+        border: none;
     }
   </style>
 </head>
 <body>
-  <div class="image-container" id="imageContainer"></div>
-  <div class="btn">
-    <!-- Remove < > buttons -->
+  <!-- Fixed buttons for switching between papers -->
+  <div class="fixed-buttons">
+    <button onclick="showContent('eenadu')">eenadu</button>
+    <button onclick="showContent('v6')">v6</button>
   </div>
-  <input type="number" id="indexInput" class="index-input" min="1" placeholder="Go to Page No">
-  <div id="indexDisplay" class="index-display"></div>
-  
-  <!-- Fixed bottom navbar -->
-  <div class="bottom-navbar" id="bottomNavbar"></div>
 
-  <script>
-    let currentLevelIndex = 1; // Initial level index
-    let totalPages = 0; // Variable to store total pages dynamically
+  <!-- Content containers for eenadu and v6 -->
+  <div class="container">
+    <!-- eenadu content -->
+    <div id="eenadu-content">
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>News Display</title>
+      </head>
+      <body>
+        <div id="news-container"></div>
+        <div class="navigation">
+          <button id="prev-btn">Previous</button>
+          <span class="page-number" id="page-number"></span>
+          <button id="next-btn">Next</button>
+        </div>
+        <script>
+          let currentPage = 0;
+          let totalPages = 0;
+          let newsData = [];
 
-    document.addEventListener("DOMContentLoaded", function() {
-      fetchLevelData(currentLevelIndex);
-    });
+          document.addEventListener('DOMContentLoaded', function() {
+            fetch('/fetch_news/')
+                .then(response => response.json())
+                .then(data => {
+                    newsData = data;
+                    totalPages = data.length;
+                    displayPage(currentPage);
+                });
 
-    function fetchLevelData(levelIndex) {
-      fetch('/fetch_scraped_data') // Fetch data from the Django view
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
+            document.getElementById('prev-btn').addEventListener('click', function() {
+              if (currentPage > 0) {
+                  currentPage--;
+                  displayPage(currentPage);
+              }
+            });
+
+            document.getElementById('next-btn').addEventListener('click', function() {
+              if (currentPage < totalPages - 1) {
+                  currentPage++;
+                  displayPage(currentPage);
+              }
+            });
+          });
+
+          function displayPage(pageIndex) {
+            const container = document.getElementById('news-container');
+            container.innerHTML = '';
+
+            const page = newsData[pageIndex];
+
+            const pageContainer = document.createElement('div');
+            pageContainer.classList.add('page-container');
+
+            const backgroundImg = document.createElement('img');
+            backgroundImg.src = page.XHighResolution;
+            backgroundImg.classList.add('background-img');
+
+            const overlayImg = document.createElement('img');
+            overlayImg.src = page.XHighResolution.replace('.jpg', '.png');
+            overlayImg.classList.add('overlay-img');
+
+            pageContainer.appendChild(backgroundImg);
+            pageContainer.appendChild(overlayImg);
+            container.appendChild(pageContainer);
+
+            document.getElementById('page-number').textContent = `${pageIndex + 1} / ${totalPages}`;
           }
-          return response.json();
-        })
-        .then(data => {
-          totalPages = Object.keys(data).length; // Update total pages dynamically
-          displayLevel(data, levelIndex);
-          updateIndexDisplay(levelIndex);
-          updateBottomNavbar();
-        })
-        .catch(error => console.error('Error fetching data:', error));
-    }
 
-    function displayLevel(data, levelIndex) {
-      const levelKey = `${levelIndex}`;
-      const level = data[levelKey].levels["level2"];
-      const container = document.getElementById('imageContainer');
-      container.style.width = `${level.width}px`;
-      container.style.height = `${level.height}px`;
-      container.innerHTML = ''; // Clear previous images
+          window.addEventListener('beforeunload', function() {
+            fetch('/fetch_news/', { method: 'DELETE' });
+          });
+        </script>
+      </body>
+      </html>
+    </div>
 
-      level.chunks.forEach(chunk => {
-        const img = document.createElement('img');
-        img.src = chunk.url;
-        img.style.left = `${chunk.tx}px`;
-        img.style.top = `${chunk.ty}px`;
-        img.style.width = `${chunk.width}px`;
-        img.style.height = `${chunk.height}px`;
-        img.classList.add('image-chunk');
-        container.appendChild(img);
-      });
-    }
+    <!-- v6 content -->
+    <div id="v6-content">
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>News Papers</title>
+      </head>
+      <body>
+        <div class="image-container" id="imageContainer"></div>
+        <div class="btn">
+        </div>
+        <input type="number" id="indexInput" class="index-input" min="1" placeholder="Go to Page No">
+        <div id="indexDisplay" class="index-display"></div>
+        <div class="bottom-navbar" id="bottomNavbar"></div>
+        <script>
+          let currentLevelIndex = 1; // Initial level index
+        //   let totalPages = 0; // Variable to store total pages dynamically
 
-    function updateIndexDisplay(currentIndex) {
-      const indexDisplay = document.getElementById('indexDisplay');
-      indexDisplay.textContent = `${currentIndex}/${totalPages}`;
-    }
+          document.addEventListener("DOMContentLoaded", function() {
+            fetchLevelData(currentLevelIndex);
+          });
 
-    function updateBottomNavbar() {
-      const bottomNavbar = document.getElementById('bottomNavbar');
-      bottomNavbar.innerHTML = ''; // Clear previous buttons
+          function fetchLevelData(levelIndex) {
+            fetch('/fetch_scraped_data') // Fetch data from the Django view
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok');
+                }
+                return response.json();
+              })
+              .then(data => {
+                totalPages = Object.keys(data).length; // Update total pages dynamically
+                displayLevel(data, levelIndex);
+                updateIndexDisplay(levelIndex);
+                updateBottomNavbar();
+              })
+              .catch(error => console.error('Error fetching data:', error));
+          }
 
-      const prevButton = document.createElement('button');
-      prevButton.textContent = 'Prev';
-      prevButton.addEventListener('click', () => {
-        currentLevelIndex--;
-        if (currentLevelIndex < 1) {
-          currentLevelIndex = totalPages; // Cycle back to the last page when reaching the first page
-        }
-        fetchLevelData(currentLevelIndex);
-      });
-      bottomNavbar.appendChild(prevButton);
+          function displayLevel(data, levelIndex) {
+            const levelKey = `${levelIndex}`;
+            const level = data[levelKey].levels["level2"];
+            const container = document.getElementById('imageContainer');
+            container.style.width = `${level.width}px`;
+            container.style.height = `${level.height}px`;
+            container.innerHTML = ''; // Clear previous images
 
-      const nextButton = document.createElement('button');
-      nextButton.textContent = 'Next';
-      nextButton.addEventListener('click', () => {
-        currentLevelIndex++;
-        if (currentLevelIndex > totalPages) {
-          currentLevelIndex = 1; // Cycle back to the first page when reaching the last page
-        }
-        fetchLevelData(currentLevelIndex);
-      });
-      bottomNavbar.appendChild(nextButton);
-    }
+            level.chunks.forEach(chunk => {
+              const img = document.createElement('img');
+              img.src = chunk.url;
+              img.style.left = `${chunk.tx}px`;
+              img.style.top = `${chunk.ty}px`;
+              img.style.width = `${chunk.width}px`;
+              img.style.height = `${chunk.height}px`;
+              img.classList.add('image-chunk');
+              container.appendChild(img);
+            });
+          }
 
-    // Event listener for the index input field
-    const indexInput = document.getElementById('indexInput');
-    indexInput.addEventListener('change', function() {
-      const newIndex = parseInt(indexInput.value);
-      if (newIndex >= 1 && newIndex <= totalPages) {
-        currentLevelIndex = newIndex;
-        fetchLevelData(currentLevelIndex);
-      } else {
-        alert(`Please enter a valid index between 1 and ${totalPages}.`);
-        indexInput.value = currentLevelIndex; // Reset to current index if invalid input
+          function updateIndexDisplay(currentIndex) {
+            const indexDisplay = document.getElementById('indexDisplay');
+            indexDisplay.textContent = `${currentIndex}/${totalPages}`;
+          }
+
+          function updateBottomNavbar() {
+            const bottomNavbar = document.getElementById('bottomNavbar');
+            bottomNavbar.innerHTML = ''; // Clear previous buttons
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = 'Prev';
+            prevButton.addEventListener('click', () => {
+              currentLevelIndex--;
+              if (currentLevelIndex < 1) {
+                currentLevelIndex = totalPages; // Cycle back to the last page when reaching the first page
+              }
+              fetchLevelData(currentLevelIndex);
+            });
+            bottomNavbar.appendChild(prevButton);
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Next';
+            nextButton.addEventListener('click', () => {
+              currentLevelIndex++;
+              if (currentLevelIndex > totalPages) {
+                currentLevelIndex = 1; // Cycle back to the first page when reaching the last page
+              }
+              fetchLevelData(currentLevelIndex);
+            });
+            bottomNavbar.appendChild(nextButton);
+          }
+
+          // Event listener for the index input field
+          const indexInput = document.getElementById('indexInput');
+          indexInput.addEventListener('change', function() {
+            const newIndex = parseInt(indexInput.value);
+            if (newIndex >= 1 && newIndex <= totalPages) {
+              currentLevelIndex = newIndex;
+              fetchLevelData(currentLevelIndex);
+            } else {
+              alert(`Please enter a valid index between 1 and ${totalPages}.`);
+              indexInput.value = currentLevelIndex; // Reset to current index if invalid input
+            }
+          });
+        </script>
+      </body>
+      </html>
+    </div>
+  </div>
+
+  <!-- Script to handle content switching -->
+  <script>
+    function showContent(contentType) {
+      const eenaduContent = document.getElementById('eenadu-content');
+      const v6Content = document.getElementById('v6-content');
+
+      if (contentType === 'eenadu') {
+        eenaduContent.style.display = 'block';
+        v6Content.style.display = 'none';
+      } else if (contentType === 'v6') {
+        eenaduContent.style.display = 'none';
+        v6Content.style.display = 'block';
       }
-    });
+    }
   </script>
 </body>
 </html>
