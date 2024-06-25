@@ -30,7 +30,7 @@ def fetch_news_data(request):
     return JsonResponse(data, safe=False)
 
 def index(request):
-    return render(request, 'newspaper/index.html')
+    return render(request, 'epaper/display.html')
 
 
 
@@ -61,7 +61,7 @@ def extract_number_from_webpage():
     return None
 
 def scrape_and_display(request):
-    return render(request, 'newspaper/index.html')
+    return render(request, 'epaper/display.html')
 
 def fetch_scraped_data(request):
     # Extract the number from the webpage
