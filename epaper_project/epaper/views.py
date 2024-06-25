@@ -1,8 +1,40 @@
-# views.py
+import json
+import requests
+from datetime import datetime, timedelta
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
-from django.http import JsonResponse
 import requests
 import re
+
+#eenadu
+
+def fetch_news_data(request):
+    if request.method == 'DELETE':
+        request.session.pop('news_data', None)
+        return HttpResponse(status=204)
+    
+    # Constructing dynamic URL based on current date
+    today = datetime.now().strftime('%d/%m/%Y')
+    data_url = f"https://epaper.eenadu.net/Home/GetAllpages?editionid=1&editiondate={today}&IsMag=0"
+
+    if 'news_data' not in request.session:
+        response = requests.get(data_url)
+        if response.status_code == 200:
+            data = response.json()
+            request.session['news_data'] = data
+        else:
+            return HttpResponse(status=500)
+    else:
+        data = request.session['news_data']
+    
+    return JsonResponse(data, safe=False)
+
+def index(request):
+    return render(request, 'newspaper/index.html')
+
+
+
+#v6
 
 # URL of the page you want to fetch
 webpage_url = 'https://epaper.v6velugu.com/3883220/Telangana-Main/24-06-2024#page/1/1'
@@ -29,10 +61,14 @@ def extract_number_from_webpage():
     return None
 
 def scrape_and_display(request):
-    return render(request, 'epaper/display.html')
+    return render(request, 'newspaper/index.html')
 
 def fetch_scraped_data(request):
     # Extract the number from the webpage
+    if request.method == 'DELETE':
+        request.session.pop('news_data2', None)
+        return HttpResponse(status=204)
+    
     number = extract_number_from_webpage()
     if not number:
         return JsonResponse({'error': 'Failed to fetch number from webpage'}, status=500)
